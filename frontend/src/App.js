@@ -1,112 +1,80 @@
 import { useEffect, useState } from "react";
+import ProductList from "./components/ProductList";
+import ProductForm from "./components/ProductForm";
+import {
+  getProductos,
+  addProducto,
+  updateProducto,
+  deleteProducto,
+} from "./services/api";
 
+/**
+ * Componente principal de la aplicación.
+ * - Carga los productos al iniciar.
+ * - Administra el estado de los productos y el producto en edición.
+*/
 function App() {
+  // Estado con todos los productos
   const [productos, setProductos] = useState([]);
-  const [nombre, setNombre] = useState("");
-  const [precio, setPrecio] = useState("");
+
+  // Estado para saber si estamos editando un producto (o no)
   const [editando, setEditando] = useState(null);
 
-  // Cargar productos
+  /**
+   * useEffect se ejecuta solo una vez al montar el componente.
+   * Carga los productos desde el backend.
+  */
   useEffect(() => {
-    fetch("http://localhost:5112/api/productos")
-      .then((res) => res.json())
-      .then((data) => setProductos(data));
+    getProductos().then(setProductos);
   }, []);
 
-  // Agregar producto
-  const agregarProducto = async (e) => {
-    e.preventDefault();
-    const nuevo = { nombre, precio: parseFloat(precio) };
-
+  /**
+   * Agrega o actualiza un producto según el estado "editando".
+  */
+  const handleAddOrEdit = async (producto) => {
     if (editando) {
-      // 🔹 Editar
-      await fetch(`http://localhost:5112/api/productos/${editando.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevo),
-      });
-
-      setProductos(
-        productos.map((p) =>
-          p.id === editando.id ? { ...p, ...nuevo } : p
+      // Si hay un producto en edición, lo actualizamos
+      await updateProducto(editando.id, producto);
+      setProductos((prev) =>
+        prev.map((p) => 
+          p.id === editando.id ? { ...p, ...producto } : p
         )
       );
       setEditando(null);
     } else {
-      // 🔹 Agregar nuevo
-      const res = await fetch("http://localhost:5112/api/productos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevo),
-      });
-      const data = await res.json();
-      setProductos([...productos, data]);
+      // Si no, agregamos un nuevo producto
+      const nuevo = await addProducto(producto);
+      setProductos((prev) => [...prev, nuevo]);
     }
-
-    setNombre("");
-    setPrecio("");
   };
 
-  // 🔹 Eliminar producto
-  const eliminarProducto = async (id) => {
-    await fetch(`http://localhost:5112/api/productos/${id}`, {
-      method: "DELETE",
-    });
-    setProductos(productos.filter((p) => p.id !== id));
-  };
-
-  // 🔹 Editar producto (cargar datos al formulario)
-  const iniciarEdicion = (producto) => {
-    setEditando(producto);
-    setNombre(producto.nombre);
-    setPrecio(producto.precio);
+  /**
+   * Elimina un producto por ID.
+  */
+  const handleDelete = async (id) => {
+    await deleteProducto(id);
+    setProductos((prev) => prev.filter((p) => p.id !== id));
   };
 
   return (
     <div style={{ padding: 20 }}>
       <h1>Productos</h1>
-      <ul>
-        {productos.map((p) => (
-          <li key={p.id}>
-            {p.nombre} - ${p.precio.toFixed(2)}{" "}
-            <button onClick={() => iniciarEdicion(p)}>✏️</button>
-            <button onClick={() => eliminarProducto(p.id)}>🗑️</button>
-          </li>
-        ))}
-      </ul>
+
+      {/* Lista de productos */}
+      <ProductList
+        productos={productos}
+        onEdit={setEditando}
+        onDelete={handleDelete}
+      />
 
       <h2>{editando ? "Editar producto" : "Agregar producto"}</h2>
-      <form onSubmit={agregarProducto}>
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Precio"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-          required
-        />
-        <button type="submit">
-          {editando ? "Guardar cambios" : "Agregar"}
-        </button>
-        {editando && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditando(null);
-              setNombre("");
-              setPrecio("");
-            }}
-          >
-            Cancelar
-          </button>
-        )}
-      </form>
+
+      {/* Formulario para agregar o editar */}
+      <ProductForm
+        onSubmit={handleAddOrEdit}
+        productoEditando={editando}
+        onCancel={() => setEditando(null)}
+      />
     </div>
   );
 }

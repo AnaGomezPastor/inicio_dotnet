@@ -154,3 +154,4 @@ C:\Users\angop\Documents\Ana\Inicio_net\backend\obj\Debug\net9.0\refint\backend.
 C:\Users\angop\Documents\Ana\Inicio_net\backend\obj\Debug\net9.0\backend.pdb
 C:\Users\angop\Documents\Ana\Inicio_net\backend\obj\Debug\net9.0\backend.genruntimeconfig.cache
 C:\Users\angop\Documents\Ana\Inicio_net\backend\obj\Debug\net9.0\ref\backend.dll
+C:\Users\angop\Documents\Ana\Inicio_net\backend\obj\Debug\net9.0\backend.sourcelink.json
